@@ -1,0 +1,36 @@
+global: # Global configuration
+  installCommand: paru -S # Package install command, package name will be appended
+  dotfiles: ~/dotfiles # Path to dotfiles, ~ will be expanded
+variables: # Variables that will be replaced into parsed files
+  background: '#1E1E2E'
+  foreground: '#D9E0EE'
+  cursor: '#FAE3B0'
+  color0: '#6E6C7E'
+  color8: '#988BA2'
+  color1: '#F28FAD'
+  color9: '#F28FAD'
+  color2: '#ABE9B3'
+  color10: '#ABE9B3'
+  color3: '#FAE3B0'
+  color11: '#FAE3B0'
+  color4: '#96CDFB'
+  color12: '#96CDFB'
+  color5: '#DDB6F2'
+  color13: '#DDB6F2'
+  color6: '#F5C2E7'
+  color14: '#F5C2E7'
+  color7: '#C3BAC6'
+  color15: '#D9E0EE'
+modules: # List of modules
+  ydots: # Module name, ydots can be used to manage itself
+    dirname: ydots # dotfiles directory name. Default: module name
+    enabled: false # if dotfiles needs to be managed. Default: true
+    targetDir: ~/.config/ydots # target configuration path. Default: ~/.config/{package name}
+    packageName: ydots # system package name. Default: None
+    dependencies: [] # List of system dependencies. Default: []
+    files: # List of files to be linked or parsed. Default: whole directory
+      - source: config.yaml # file path
+        target: config.yaml # target path of specific file in module targetPath
+        parse: false # Whether this file needs to be parsed or not. Default: false
+
+    customSteps: [] # List of custom commands to run before installing config
