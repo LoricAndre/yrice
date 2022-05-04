@@ -1,18 +1,15 @@
 extern crate serde_yaml;
-use log::{warn, error, info};
 use serde_yaml::Value;
 
 use crate::module::Module;
 use crate::variable::Variable;
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct Globals {
     pub install_command: String,
     pub dotfiles: String,
 }
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct Config {
     pub filename: String,
@@ -33,12 +30,13 @@ impl Config {
             modules: Vec::new(),
         };
 
-        config.load(&enabled_modules);
+        config.load(&enabled_modules).expect("Failed to load config");
 
         return config;
     }
 
-    fn load_globals(&mut self, globals: Value) {
+    // Load globals from "config" key in yaml
+    fn load_globals(&mut self, globals: Value) -> Result<(), String> {
         for (key, value) in globals.as_mapping().unwrap().iter() {
             match key.as_str() {
                 Some("installCommand") => {
@@ -48,15 +46,17 @@ impl Config {
                     self.globals.dotfiles = value.as_str().unwrap().to_string();
                 }
                 Some(k) => {
-                    warn!("Unknown global key: {}", k);
+                    println!("\tUnknown global key: {}", k);
                 }
                 _ => {
-                    panic!("Unknown error parsing globals");
+                    panic!("Unknown error parsing globals")
                 }
             }
         }
+        Ok(())
     }
 
+    // Load variables from "variables" key in yaml
     fn load_variables(&mut self, variables: Value) {
         for (key, value) in variables.as_mapping().unwrap().iter() {
             let variable = Variable::new(
@@ -67,7 +67,9 @@ impl Config {
         }
     }
 
+    // Load modules from "modules" key in yaml
     fn load_modules(&mut self, modules: Value, enabled_modules: &Vec<String>) {
+        let mut handled = Vec::new();
         let all = enabled_modules.len() == 0;
         for (raw_key, value) in modules.as_mapping().unwrap().iter() {
             let key = &raw_key.as_str().unwrap().to_string();
@@ -76,24 +78,41 @@ impl Config {
                 None => true
             };
             if (all && enabled) || enabled_modules.contains(key) {
+                let module = Module::new(key, value, &self.globals.dotfiles);
+                for req in module.get_requires().iter() {
+                    if !handled.contains(req) {
+                        match modules.get(req) {
+                            Some(m) => {
+                                self.modules
+                                    .push(Module::new(req, &m.clone(), &self.globals.dotfiles));
+                                handled.push(req.to_string());
+                            }
+                            None => {
+                                println!("\t[Warn] Module {} requires {} but it is was not found", key, req);
+                            }
+                        }
+                    }
+                }
                 self.modules
                     .push(Module::new(key, value, &self.globals.dotfiles));
+                handled.push(key.to_string());
+
             }
         }
     }
 
-    pub fn load(&mut self, enabled_modules: &Vec<String>) {
+    // Load config from yaml file
+    pub fn load(&mut self, enabled_modules: &Vec<String>) -> Result<(), String> {
         let file = std::fs::File::open(self.filename.clone());
         if file.is_err() {
-            error!("Could not open config file: {}", self.filename);
-            return ();
+            return Err(format!("Could not open config file: {}", self.filename));
         }
         let yaml: Value = serde_yaml::from_reader(file.unwrap()).unwrap();
 
         for (key, value) in yaml.as_mapping().unwrap().iter() {
             match key.as_str().unwrap() {
                 "global" => {
-                    self.load_globals(value.clone());
+                    self.load_globals(value.clone())?;
                 }
                 "variables" => {
                     self.load_variables(value.clone());
@@ -102,25 +121,28 @@ impl Config {
                     self.load_modules(value.clone(), enabled_modules);
                 }
                 k => {
-                    warn!("Unknown key: {}", k);
+                    println!("[Warn] Unknown toplevel key: {}", k);
                 }
             }
         }
-        info!("Loaded config: {}", self.filename);
+        println!("[Info] Loaded config: {}", self.filename);
+        return Ok(());
     }
 
+    // Run YDots
     pub fn run(&self, install: bool) -> Result<(), String> {
         let n = self.modules.len();
         let mut i = 1;
         for m in self.modules.iter() {
-            print!("[{}/{}] {}...", i, n, m.name);
+            println!("[{}/{}] {}...", i, n, m.get_name());
             i += 1;
             if install {
                 m.install(&self.globals.install_command)?;
             }
-            m.run_custom_steps()?;
+            m.run_custom_steps(true)?;
             m.link_files(self.variables.clone())?;
-            println!(" [OK]");
+            m.run_custom_steps(false)?;
+            println!("[OK]");
         }
         Ok(())
     }

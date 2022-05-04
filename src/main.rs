@@ -1,6 +1,5 @@
 extern crate clap;
 use clap::Parser;
-extern crate env_logger;
 
 mod config;
 mod file;
@@ -28,7 +27,6 @@ struct Args {
 }
 
 fn main() -> Result<(), String> {
-    env_logger::init();
     let args = Args::parse();
     let file_path = match args.config {
         Some(path) => path,

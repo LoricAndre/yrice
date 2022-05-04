@@ -1,16 +1,16 @@
 extern crate serde_yaml;
-use log::{warn, debug};
+extern crate casual;
 use regex::Regex;
+use casual::confirm;
 use serde_yaml::Value;
-use std::fs::create_dir_all;
+use std::fs::{create_dir_all, remove_dir_all, remove_file};
 
 use crate::utils;
 use crate::variable::Variable;
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct File {
-    pub source: String,
+    source: String,
     target: String,
     parse: bool,
 }
@@ -44,6 +44,11 @@ impl File {
         }
     }
 
+    pub fn get_source(&self) -> &String {
+        &self.source
+    }
+
+    // Create parent directory. This will fail most of the time.
     fn mkdir(&self) -> Result<(), std::io::Error> {
         let path = self.target.clone();
         let parts = Regex::new(r"^(.*)/([^/]*)$")
@@ -53,35 +58,41 @@ impl File {
         create_dir_all(&parts[1])
     }
 
-    fn rm(&self) {
-        match std::fs::remove_file(&self.target) {
-            Ok(_) => {}
+    // Remove target file.
+    // If the command errors, user will be prompted to confirm
+    // to try treating the file as a directory.
+    fn rm(&self) -> Result<(), String> {
+        match remove_file(&self.target) {
+            Ok(_) => {Ok(())}
             Err(_) => {
-                match std::fs::remove_dir_all(&self.target) {
-                    Ok(_) => {}
+                if !confirm(format!("Failed to remove file: {}. YDots will try to treat it as a directory and remove it. Continue?: ", &self.target)) {
+                    return Err(format!("Aborted, please remove it manually."));
+                }
+                match remove_dir_all(&self.target) {
+                    Ok(_) => {return Ok(());}
                     Err(e) => {
-                        warn!("Error while removing {}: {}", self.target, e)
-                    },
+                        return Err(format!("Error while removing {}: {}", self.target, e));
+                    }
                 }
             }
         }
     }
 
+    // Link or parse and copy file to the target path.
     pub fn link(&self, variables: Vec<Variable>) -> Result<(), String> {
         match self.mkdir() {
             Ok(_) => {
-                debug!("Copying {} to {}", self.source, self.target);
-                self.rm();
+                self.rm()?; // Remove target file if it exists. This replaces the `--force` option of GNU `ln`.
                 if self.parse {
                     match utils::parse_file(&self.source, variables) {
                         Ok(parse_file) => utils::write_file(&self.target, &parse_file),
-                        Err(e) => Err(e),
+                        Err(e) => Err(e)
                     }
                 } else {
                     utils::link_file(&self.source, &self.target)
                 }
             }
-            Err(e) => Err(e.to_string()),
+            Err(e) => Err(e.to_string())
         }
     }
 }

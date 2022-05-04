@@ -1,5 +1,4 @@
 use crate::variable::Variable;
-use log::{debug, info};
 use std::env;
 use std::os::unix::fs::symlink;
 use std::process::Command;
@@ -8,18 +7,15 @@ pub fn get_config_dir(subdir: &String) -> String {
     let mut config_dir;
     match env::var("XDG_CONFIG_HOME") {
         Ok(dir) => {
-            debug!("XDG_CONFIG_HOME: {}", dir);
             config_dir = dir
         }
         Err(_) => match env::var("HOME") {
             Ok(dir) => {
-                debug!("XDG_CONFIG_HOME not set, using {}", dir);
                 config_dir = dir;
                 config_dir.push_str(&"/.config".to_string());
             }
             Err(_) => {
                 config_dir = ".".to_string();
-                debug!("XDG_CONFIG_HOME and HOME not set, using {}", config_dir);
             }
         },
     }
@@ -56,7 +52,6 @@ pub fn write_file(filename: &String, content: &String) -> Result<(), String> {
 }
 
 pub fn link_file(source: &String, target: &String) -> Result<(), String> {
-    info!("link {} to {}", source, target);
     symlink(source, target).expect("Failed to link file");
     return Ok(());
 }
