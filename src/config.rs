@@ -1,8 +1,5 @@
-extern crate serde_yaml;
 use serde_yaml::Value;
-
 use crate::module::Module;
-use crate::variable::Variable;
 
 #[derive(Debug)]
 pub struct Globals {
@@ -14,7 +11,7 @@ pub struct Globals {
 pub struct Config {
     pub filename: String,
     pub globals: Globals,
-    pub variables: Vec<Variable>,
+    pub variables: Value,
     pub modules: Vec<Module>,
 }
 
@@ -26,7 +23,7 @@ impl Config {
                 install_command: String::from(""),
                 dotfiles: String::from(""),
             },
-            variables: Vec::new(),
+            variables: Value::Null,
             modules: Vec::new(),
         };
 
@@ -54,17 +51,6 @@ impl Config {
             }
         }
         Ok(())
-    }
-
-    // Load variables from "variables" key in yaml
-    fn load_variables(&mut self, variables: Value) {
-        for (key, value) in variables.as_mapping().unwrap().iter() {
-            let variable = Variable::new(
-                key.as_str().unwrap().to_string(),
-                value.as_str().unwrap().to_string(),
-            );
-            self.variables.push(variable);
-        }
     }
 
     // Load modules from "modules" key in yaml
@@ -115,7 +101,7 @@ impl Config {
                     self.load_globals(value.clone())?;
                 }
                 "variables" => {
-                    self.load_variables(value.clone());
+                    self.variables = value.clone();
                 }
                 "modules" => {
                     self.load_modules(value.clone(), enabled_modules);

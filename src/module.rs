@@ -1,12 +1,9 @@
-extern crate serde_yaml;
-extern crate resolve_path;
 use serde_yaml::Value;
 use resolve_path::PathResolveExt;
 use std::path::Path;
 
 use crate::file::File;
 use crate::utils;
-use crate::variable::Variable;
 
 #[derive(Debug)]
 pub struct Module {
@@ -145,7 +142,7 @@ impl Module {
     // Copy the files to the target directory
     // If the file needs to be parsed, it will be parsed and written 
     // If the file does not need to be parsed, it will be softlinked
-    pub fn link_files(&self, variables: Vec<Variable>) -> Result<(), String> {
+    pub fn link_files(&self, variables: Value) -> Result<(), String> {
         for file in self.files.iter() {
             println!("\tCopying {}...", file.get_source());
             let _ = match file.copy(variables.clone()) {

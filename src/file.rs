@@ -1,12 +1,9 @@
-extern crate serde_yaml;
-extern crate casual;
 use regex::Regex;
 use casual::confirm;
 use serde_yaml::Value;
+use handlebars::Handlebars;
 use std::fs;
 use std::os::unix::fs::symlink;
-
-use crate::variable::Variable;
 
 #[derive(Debug)]
 pub struct File {
@@ -79,7 +76,7 @@ impl File {
     }
 
     // Link or parse and copy file to the target path.
-    pub fn copy(&self, variables: Vec<Variable>) -> Result<(), String> {
+    pub fn copy(&self, variables: Value) -> Result<(), String> {
         match self.mkdir() {
             Ok(_) => {
                 self.rm()?; // Remove target file if it exists. This replaces the `--force` option of GNU `ln`.
@@ -96,15 +93,14 @@ impl File {
         }
     }
 
-    fn parse(&self, variables: Vec<Variable>) -> Result<String, String> {
+    fn parse(&self, variables: Value) -> Result<String, String> {
         let orig = fs::read_to_string(&self.source)
             .expect("Failed to read file");
-        let mut new = orig.clone();
-        for variable in variables {
-            let pattern = String::from("%{{") + &variable.name + "}}";
-            new = new.replace(pattern.as_str(), &variable.value);
+        let reg = Handlebars::new();
+        return match reg.render_template(&orig, &variables) {
+            Ok(parsed) => Ok(parsed),
+            Err(e) => Err(e.to_string())
         }
-        return Ok(new);
     }
     fn write(&self, content: &String) -> Result<(), String> {
         fs::write(&self.target, content)

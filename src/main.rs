@@ -1,11 +1,9 @@
-extern crate clap;
 use clap::Parser;
 
 mod config;
 mod file;
 mod module;
 mod utils;
-mod variable;
 
 use config::Config;
 
