@@ -1,5 +1,5 @@
-use serde_yaml::Value;
 use resolve_path::PathResolveExt;
+use serde_yaml::Value;
 use std::path::Path;
 
 use crate::file::File;
@@ -13,7 +13,7 @@ pub struct Module {
     files: Vec<File>,
     pre_steps: Vec<String>,
     post_steps: Vec<String>,
-    requires: Vec<String>
+    requires: Vec<String>,
 }
 
 impl Module {
@@ -84,14 +84,13 @@ impl Module {
             files: files,
             pre_steps: pre_steps,
             post_steps: post_steps,
-            requires: requires
+            requires: requires,
         };
     }
 
     pub fn get_name(&self) -> &String {
         return &self.name;
     }
-
 
     pub fn get_requires(&self) -> &Vec<String> {
         return &self.requires;
@@ -140,7 +139,7 @@ impl Module {
     }
 
     // Copy the files to the target directory
-    // If the file needs to be parsed, it will be parsed and written 
+    // If the file needs to be parsed, it will be parsed and written
     // If the file does not need to be parsed, it will be softlinked
     pub fn link_files(&self, variables: Value) -> Result<(), String> {
         for file in self.files.iter() {

@@ -1,5 +1,5 @@
-use serde_yaml::Value;
 use crate::module::Module;
+use serde_yaml::Value;
 
 #[derive(Debug)]
 pub struct Globals {
@@ -27,7 +27,9 @@ impl Config {
             modules: Vec::new(),
         };
 
-        config.load(&enabled_modules).expect("Failed to load config");
+        config
+            .load(&enabled_modules)
+            .expect("Failed to load config");
 
         return config;
     }
@@ -61,7 +63,7 @@ impl Config {
             let key = &raw_key.as_str().unwrap().to_string();
             let enabled = match value["enabled"].as_bool() {
                 Some(b) => b,
-                None => true
+                None => true,
             };
             if (all && enabled) || enabled_modules.contains(key) {
                 let module = Module::new(key, value, &self.globals.dotfiles);
@@ -69,12 +71,18 @@ impl Config {
                     if !handled.contains(req) {
                         match modules.get(req) {
                             Some(m) => {
-                                self.modules
-                                    .push(Module::new(req, &m.clone(), &self.globals.dotfiles));
+                                self.modules.push(Module::new(
+                                    req,
+                                    &m.clone(),
+                                    &self.globals.dotfiles,
+                                ));
                                 handled.push(req.to_string());
                             }
                             None => {
-                                println!("\t[Warn] Module {} requires {} but it is was not found", key, req);
+                                println!(
+                                    "\t[Warn] Module {} requires {} but it is was not found",
+                                    key, req
+                                );
                             }
                         }
                     }
@@ -82,7 +90,6 @@ impl Config {
                 self.modules
                     .push(Module::new(key, value, &self.globals.dotfiles));
                 handled.push(key.to_string());
-
             }
         }
     }

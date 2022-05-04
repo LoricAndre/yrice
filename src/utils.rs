@@ -4,9 +4,7 @@ use std::process::Command;
 pub fn get_config_dir(subdir: &String) -> String {
     let mut config_dir;
     match env::var("XDG_CONFIG_HOME") {
-        Ok(dir) => {
-            config_dir = dir
-        }
+        Ok(dir) => config_dir = dir,
         Err(_) => match env::var("HOME") {
             Ok(dir) => {
                 config_dir = dir;

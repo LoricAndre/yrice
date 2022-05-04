@@ -1,7 +1,7 @@
-use regex::Regex;
 use casual::confirm;
-use serde_yaml::Value;
 use handlebars::Handlebars;
+use regex::Regex;
+use serde_yaml::Value;
 use std::fs;
 use std::os::unix::fs::symlink;
 
@@ -60,13 +60,15 @@ impl File {
     // to try treating the file as a directory.
     fn rm(&self) -> Result<(), String> {
         match fs::remove_file(&self.target) {
-            Ok(_) => {Ok(())}
+            Ok(_) => Ok(()),
             Err(_) => {
                 if !confirm(format!("Failed to remove file: {}. YDots will try to treat it as a directory and remove it. Continue?: ", &self.target)) {
                     return Err(format!("Aborted, please remove it manually."));
                 }
                 match fs::remove_dir_all(&self.target) {
-                    Ok(_) => {return Ok(());}
+                    Ok(_) => {
+                        return Ok(());
+                    }
                     Err(e) => {
                         return Err(format!("Error while removing {}: {}", self.target, e));
                     }
@@ -83,28 +85,26 @@ impl File {
                 if self.to_parse {
                     match self.parse(variables) {
                         Ok(parsed) => self.write(&parsed),
-                        Err(e) => Err(e)
+                        Err(e) => Err(e),
                     }
                 } else {
                     self.link()
                 }
             }
-            Err(e) => Err(e.to_string())
+            Err(e) => Err(e.to_string()),
         }
     }
 
     fn parse(&self, variables: Value) -> Result<String, String> {
-        let orig = fs::read_to_string(&self.source)
-            .expect("Failed to read file");
+        let orig = fs::read_to_string(&self.source).expect("Failed to read file");
         let reg = Handlebars::new();
         return match reg.render_template(&orig, &variables) {
             Ok(parsed) => Ok(parsed),
-            Err(e) => Err(e.to_string())
-        }
+            Err(e) => Err(e.to_string()),
+        };
     }
     fn write(&self, content: &String) -> Result<(), String> {
-        fs::write(&self.target, content)
-            .expect("Failed to write file");
+        fs::write(&self.target, content).expect("Failed to write file");
         return Ok(());
     }
     fn link(&self) -> Result<(), String> {
