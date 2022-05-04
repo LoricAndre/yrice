@@ -1,6 +1,4 @@
-use crate::variable::Variable;
 use std::env;
-use std::os::unix::fs::symlink;
 use std::process::Command;
 
 pub fn get_config_dir(subdir: &String) -> String {
@@ -33,25 +31,5 @@ pub fn cmd(command: &String) -> Result<(), String> {
     if !output.status.success() {
         return Err(String::from_utf8_lossy(&output.stderr).to_string());
     }
-    return Ok(());
-}
-
-pub fn parse_file(filename: &String, variables: Vec<Variable>) -> Result<String, String> {
-    let orig = std::fs::read_to_string(filename).expect("Failed to read file");
-    let mut new = orig.clone();
-    for variable in variables {
-        let pattern = String::from("%{{") + &variable.name + "}}";
-        new = new.replace(pattern.as_str(), &variable.value);
-    }
-    return Ok(new);
-}
-
-pub fn write_file(filename: &String, content: &String) -> Result<(), String> {
-    std::fs::write(filename, content).expect("Failed to write file");
-    return Ok(());
-}
-
-pub fn link_file(source: &String, target: &String) -> Result<(), String> {
-    symlink(source, target).expect("Failed to link file");
     return Ok(());
 }

@@ -148,7 +148,7 @@ impl Module {
     pub fn link_files(&self, variables: Vec<Variable>) -> Result<(), String> {
         for file in self.files.iter() {
             println!("\tCopying {}...", file.get_source());
-            let _ = match file.link(variables.clone()) {
+            let _ = match file.copy(variables.clone()) {
                 Ok(_) => Ok(()),
                 Err(e) => Err(format!("{} failed to copy: {}", file.get_source(), e)),
             };

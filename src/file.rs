@@ -3,16 +3,16 @@ extern crate casual;
 use regex::Regex;
 use casual::confirm;
 use serde_yaml::Value;
-use std::fs::{create_dir_all, remove_dir_all, remove_file};
+use std::fs;
+use std::os::unix::fs::symlink;
 
-use crate::utils;
 use crate::variable::Variable;
 
 #[derive(Debug)]
 pub struct File {
     source: String,
     target: String,
-    parse: bool,
+    to_parse: bool,
 }
 
 impl File {
@@ -40,7 +40,7 @@ impl File {
         File {
             source: source_path,
             target: target_path,
-            parse: parse,
+            to_parse: parse,
         }
     }
 
@@ -55,20 +55,20 @@ impl File {
             .unwrap()
             .captures(&path)
             .unwrap();
-        create_dir_all(&parts[1])
+        fs::create_dir_all(&parts[1])
     }
 
     // Remove target file.
     // If the command errors, user will be prompted to confirm
     // to try treating the file as a directory.
     fn rm(&self) -> Result<(), String> {
-        match remove_file(&self.target) {
+        match fs::remove_file(&self.target) {
             Ok(_) => {Ok(())}
             Err(_) => {
                 if !confirm(format!("Failed to remove file: {}. YDots will try to treat it as a directory and remove it. Continue?: ", &self.target)) {
                     return Err(format!("Aborted, please remove it manually."));
                 }
-                match remove_dir_all(&self.target) {
+                match fs::remove_dir_all(&self.target) {
                     Ok(_) => {return Ok(());}
                     Err(e) => {
                         return Err(format!("Error while removing {}: {}", self.target, e));
@@ -79,20 +79,40 @@ impl File {
     }
 
     // Link or parse and copy file to the target path.
-    pub fn link(&self, variables: Vec<Variable>) -> Result<(), String> {
+    pub fn copy(&self, variables: Vec<Variable>) -> Result<(), String> {
         match self.mkdir() {
             Ok(_) => {
                 self.rm()?; // Remove target file if it exists. This replaces the `--force` option of GNU `ln`.
-                if self.parse {
-                    match utils::parse_file(&self.source, variables) {
-                        Ok(parse_file) => utils::write_file(&self.target, &parse_file),
+                if self.to_parse {
+                    match self.parse(variables) {
+                        Ok(parsed) => self.write(&parsed),
                         Err(e) => Err(e)
                     }
                 } else {
-                    utils::link_file(&self.source, &self.target)
+                    self.link()
                 }
             }
             Err(e) => Err(e.to_string())
         }
+    }
+
+    fn parse(&self, variables: Vec<Variable>) -> Result<String, String> {
+        let orig = fs::read_to_string(&self.source)
+            .expect("Failed to read file");
+        let mut new = orig.clone();
+        for variable in variables {
+            let pattern = String::from("%{{") + &variable.name + "}}";
+            new = new.replace(pattern.as_str(), &variable.value);
+        }
+        return Ok(new);
+    }
+    fn write(&self, content: &String) -> Result<(), String> {
+        fs::write(&self.target, content)
+            .expect("Failed to write file");
+        return Ok(());
+    }
+    fn link(&self) -> Result<(), String> {
+        symlink(&self.source, &self.target).expect("Failed to link file");
+        return Ok(());
     }
 }
