@@ -46,7 +46,7 @@ impl Config {
                     self.globals.dotfiles = value.as_str().unwrap().to_string();
                 }
                 Some(k) => {
-                    println!("\tUnknown global key: {}", k);
+                    println!("[Warn] Unknown global key: {}", k);
                 }
                 _ => {
                     panic!("Unknown error parsing globals")
