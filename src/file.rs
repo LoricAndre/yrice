@@ -1,6 +1,4 @@
-use casual::confirm;
 use handlebars::Handlebars;
-use regex::Regex;
 use serde_yaml::Value;
 use std::fs;
 use std::os::unix::fs::symlink;
@@ -48,40 +46,29 @@ impl File {
     // Create parent directory. This will fail most of the time.
     fn mkdir(&self) -> Result<(), std::io::Error> {
         let path = self.target.clone();
-        let parts = Regex::new(r"^(.*)/([^/]*)$")
-            .unwrap()
-            .captures(&path)
-            .unwrap();
-        fs::create_dir_all(&parts[1])
+        let dir = if let Some((_, parts)) = path.split("/")
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>()
+            .split_last() {
+            parts.join("/")
+        } else {String::new()};
+        fs::create_dir_all(dir)
     }
 
     // Remove target file.
     // If the command errors, user will be prompted to confirm
     // to try treating the file as a directory.
     fn rm(&self) -> Result<(), String> {
-        match fs::remove_file(&self.target) {
-            Ok(_) => Ok(()),
-            Err(_) => {
-                if !confirm(format!("Failed to remove file: {}. YDots will try to treat it as a directory and remove it. Continue?: ", &self.target)) {
-                    return Err(format!("Aborted, please remove it manually."));
-                }
-                match fs::remove_dir_all(&self.target) {
-                    Ok(_) => {
-                        return Ok(());
-                    }
-                    Err(e) => {
-                        return Err(format!("Error while removing {}: {}", self.target, e));
-                    }
-                }
-            }
-        }
+        let _ = fs::remove_file(&self.target);
+        Ok(())
     }
 
     // Link or parse and copy file to the target path.
     pub fn copy(&self, variables: Value) -> Result<(), String> {
         match self.mkdir() {
             Ok(_) => {
-                self.rm()?; // Remove target file if it exists. This replaces the `--force` option of GNU `ln`.
+                self.backup()?;
+                self.rm()?;
                 if self.to_parse {
                     match self.parse(variables) {
                         Ok(parsed) => self.write(&parsed),
@@ -95,6 +82,14 @@ impl File {
         }
     }
 
+    // Backup file before overwriting it.
+    // This will not backup soflinks to directories.
+    fn backup(&self) -> Result<(), String> {
+        let backup_path = self.target.clone() + ".bak";
+        let _ = fs::copy(&self.target, &backup_path);
+        Ok(())
+    }
+
     fn parse(&self, variables: Value) -> Result<String, String> {
         let orig = fs::read_to_string(&self.source).expect("Failed to read file");
         let reg = Handlebars::new();
@@ -105,10 +100,11 @@ impl File {
     }
     fn write(&self, content: &String) -> Result<(), String> {
         fs::write(&self.target, content).expect("Failed to write file");
-        return Ok(());
+        Ok(())
     }
     fn link(&self) -> Result<(), String> {
-        symlink(&self.source, &self.target).expect("Failed to link file");
-        return Ok(());
+        symlink(&self.source, &self.target)
+            .expect("Failed to link file");
+        Ok(())
     }
 }

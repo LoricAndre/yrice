@@ -1,5 +1,5 @@
 [package]
-name = "ydots-rs"
+name = "yrice"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,8 +7,6 @@ edition = "2021"
 
 [dependencies]
 serde_yaml = "0.8.7"
-regex = "1.4.2"
 resolve-path = "0.1.0"
 clap = {version = "3.1.15", features = ["derive"]}
-casual = "0.1.0"
 handlebars = "4.2.2"
