@@ -38,29 +38,8 @@ impl File {
             to_parse: parse,
         }
     }
-
     pub fn get_source(&self) -> &String {
         &self.source
-    }
-
-    // Create parent directory. This will fail most of the time.
-    fn mkdir(&self) -> Result<(), std::io::Error> {
-        let path = self.target.clone();
-        let dir = if let Some((_, parts)) = path.split("/")
-            .map(|s| s.to_string())
-            .collect::<Vec<String>>()
-            .split_last() {
-            parts.join("/")
-        } else {String::new()};
-        fs::create_dir_all(dir)
-    }
-
-    // Remove target file.
-    // If the command errors, user will be prompted to confirm
-    // to try treating the file as a directory.
-    fn rm(&self) -> Result<(), String> {
-        let _ = fs::remove_file(&self.target);
-        Ok(())
     }
 
     // Link or parse and copy file to the target path.
@@ -89,7 +68,6 @@ impl File {
         let _ = fs::copy(&self.target, &backup_path);
         Ok(())
     }
-
     fn parse(&self, variables: Value) -> Result<String, String> {
         let orig = fs::read_to_string(&self.source).expect("Failed to read file");
         let reg = Handlebars::new();
@@ -105,6 +83,20 @@ impl File {
     fn link(&self) -> Result<(), String> {
         symlink(&self.source, &self.target)
             .expect("Failed to link file");
+        Ok(())
+    }
+    fn mkdir(&self) -> Result<(), std::io::Error> {
+        let path = self.target.clone();
+        let dir = if let Some((_, parts)) = path.split("/")
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>()
+            .split_last() {
+            parts.join("/")
+        } else {String::new()};
+        fs::create_dir_all(dir)
+    }
+    fn rm(&self) -> Result<(), String> {
+        let _ = fs::remove_file(&self.target);
         Ok(())
     }
 }
