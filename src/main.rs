@@ -29,7 +29,7 @@ fn main() -> Result<(), String> {
     let file_path = match args.config {
         Some(path) => path,
         None => {
-            let mut res = utils::get_config_dir(&"ydots".to_string());
+            let mut res = utils::get_config_dir(&"yrice".to_string());
             res.push_str("/config.yaml");
             res
         }
