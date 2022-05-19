@@ -72,3 +72,8 @@ If it is unset (or set to `false`), the file will be _softlinked_ and **no backu
   1. look for a file named `foo/bar` in `dotfiles`
   2. replace any handlebars found in the file with the associated variable's content
   3. write the result to `~/.config/foo/baz`
+  
+  ## TODO
+  - [ ] Add url source for config
+  - [ ] Add git clone/push/pull/commit commands
+  - [ ] Later: TUI
