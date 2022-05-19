@@ -1,3 +1,4 @@
+![AUR version](https://img.shields.io/aur/version/yrice)
 # yRice
 ## Introduction
 **yRice** is a dotfile management helper written in rust based on a _yaml_ configuration file.
