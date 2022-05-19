@@ -1,9 +1,13 @@
-![AUR version](https://img.shields.io/aur/version/yrice)
 # yRice
 ## Introduction
 **yRice** is a dotfile management helper written in rust based on a _yaml_ configuration file.
 
 ## Installation
+### AUR
+This package is available on the [AUR](https://aur.archlinux.org/packages/yrice).
+### Prebuilt binary
+The latest x86 linux binary is available [here](https://github.com/LoricAndre/yrice/releases).
+### Build
 Clone this repository and run `sudo cargo install -path .`. 
 
 This will install the binary to cargo's `bin` dir, which you need to add to your `$PATH` 
