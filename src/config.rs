@@ -1,4 +1,5 @@
 use crate::module::Module;
+use crate::utils;
 use serde_yaml::Value;
 
 #[derive(Debug)]
@@ -96,11 +97,9 @@ impl Config {
 
     // Load config from yaml file
     pub fn load(&mut self, enabled_modules: &Vec<String>) -> Result<(), String> {
-        let file = std::fs::File::open(self.filename.clone());
-        if file.is_err() {
-            return Err(format!("Could not open config file: {}", self.filename));
-        }
-        let yaml: Value = serde_yaml::from_reader(file.unwrap()).unwrap();
+        let file = utils::read_file_or_url(&self.filename)?;
+        let yaml: Value = serde_yaml::from_str(&file)
+            .expect("Unknown error parsing config");
 
         for (key, value) in yaml.as_mapping().unwrap().iter() {
             match key.as_str().unwrap() {

@@ -31,3 +31,13 @@ pub fn cmd(command: &String) -> Result<(), String> {
     }
     return Ok(());
 }
+
+pub fn read_file_or_url(uri: &String) -> Result<String, String> {
+    if std::fs::metadata(&uri).is_ok() { // It is a file
+        return Ok(std::fs::read_to_string(uri).expect("Failed to read config file"));
+    } else { // Try url
+        return Ok(reqwest::blocking::get(uri).unwrap()
+            .text()
+            .expect("Failed to get config from uri"));
+    }
+}
