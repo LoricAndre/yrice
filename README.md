@@ -76,4 +76,5 @@ If it is unset (or set to `false`), the file will be _softlinked_ and **no backu
   ## TODO
   - [ ] Add url source for config
   - [ ] Add git clone/push/pull/commit commands
+  - [ ] Include other yaml file
   - [ ] Later: TUI
