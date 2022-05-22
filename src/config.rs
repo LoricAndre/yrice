@@ -1,3 +1,4 @@
+use std::fs;
 use crate::module::Module;
 use crate::utils;
 use serde_yaml::Value;
@@ -6,6 +7,7 @@ use serde_yaml::Value;
 pub struct Globals {
     pub install_command: String,
     pub dotfiles: String,
+    pub git_url: String,
 }
 
 #[derive(Debug)]
@@ -23,6 +25,7 @@ impl Config {
             globals: Globals {
                 install_command: String::from(""),
                 dotfiles: String::from(""),
+                git_url: String::from(""),
             },
             variables: Value::Null,
             modules: Vec::new(),
@@ -44,6 +47,9 @@ impl Config {
                 }
                 Some("dotfiles") => {
                     self.globals.dotfiles = value.as_str().unwrap().to_string();
+                }
+                Some("gitUrl") => {
+                    self.globals.git_url = value.as_str().unwrap().to_string();
                 }
                 Some(k) => {
                     println!("[Warn] Unknown global key: {}", k);
@@ -122,7 +128,19 @@ impl Config {
     }
 
     // Run YDots
-    pub fn run(&self, install: bool) -> Result<(), String> {
+    pub fn run(&self, install: bool, pull: bool) -> Result<(), String> {
+        if let Err(_) = fs::read_dir(&self.globals.dotfiles) {
+            match utils::cmd(&format!("git clone {} {}", &self.globals.git_url, &self.globals.dotfiles)) {
+                Ok(_) => println!("Cloned {} to {}", &self.globals.git_url, &self.globals.dotfiles),
+                Err(e) => println!("[Err] {}", e)
+            }
+        }
+        if pull {
+            match utils::git(&String::from("pull"), &self.globals.dotfiles) {
+                Ok(output) => println!("{}", output),
+                Err(e) => println!("[Err] {}", e)
+            }
+        }
         let n = self.modules.len();
         let mut i = 1;
         for m in self.modules.iter() {

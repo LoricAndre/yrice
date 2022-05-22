@@ -1,6 +1,7 @@
 global: # Global configuration
   installCommand: paru -S --needed --noconfirm # Package install command, package name will be appended
   dotfiles: ~/dotfiles # Path to dotfiles, ~ will be expanded
+  gitUrl: git@github.com:LoricAndre/dotfiles # Git dotfiles repo url
 variables: # Variables that will be replaced into parsed files
   background: 1E1E2E
   foreground: D9E0EE

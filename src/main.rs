@@ -19,6 +19,8 @@ struct Args {
     // Dry run (print config)
     #[clap(short, long)]
     dry_run: bool,
+    #[clap(short, long)]
+    pull: bool,
     // Modules to process, empty means all. Any module explicitely specified will be processed,
     // ignoring the value specified in the config file.
     modules: Vec<String>,
@@ -39,6 +41,6 @@ fn main() -> Result<(), String> {
         println!("{:#?}", config);
         Ok(())
     } else {
-        config.run(args.install)
+        config.run(args.install, args.pull)
     }
 }

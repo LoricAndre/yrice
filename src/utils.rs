@@ -20,7 +20,7 @@ pub fn get_config_dir(subdir: &String) -> String {
     return config_dir;
 }
 
-pub fn cmd(command: &String) -> Result<(), String> {
+pub fn cmd(command: &String) -> Result<String, String> {
     let output = Command::new("sh")
         .arg("-c")
         .arg(command)
@@ -29,7 +29,8 @@ pub fn cmd(command: &String) -> Result<(), String> {
     if !output.status.success() {
         return Err(String::from_utf8_lossy(&output.stderr).to_string());
     }
-    return Ok(());
+    return Ok(String::from_utf8(output.stdout)
+        .expect("Failed to convert command output to String"));
 }
 
 pub fn read_file_or_url(uri: &String) -> Result<String, String> {
@@ -40,4 +41,9 @@ pub fn read_file_or_url(uri: &String) -> Result<String, String> {
             .text()
             .expect("Failed to get config from uri"));
     }
+}
+
+pub fn git(command: &String, pwd: &String) -> Result<String, String> {
+    let full_cmd = format!("cd {} && git {}", pwd, command);
+    return cmd(&full_cmd);
 }
